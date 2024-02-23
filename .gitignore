@@ -1,4 +1,6 @@
 /node_modules
 .env
+old-code.js
+test.js
 /downloads
 /samples
