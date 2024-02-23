@@ -1,0 +1,26 @@
+{
+  "name": "telegram",
+  "version": "1.0.0",
+  "description": "App for working with telegram",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "author": "konst",
+  "license": "ISC",
+  "dependencies": {
+    "airgram": "^5.0.0",
+    "chalk": "^5.3.0",
+    "dotenv": "^16.3.1",
+    "file-type": "^19.0.0",
+    "input": "^1.0.1",
+    "postgres": "^3.4.3",
+    "telegram": "^2.19.10",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
