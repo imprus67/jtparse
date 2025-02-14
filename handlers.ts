@@ -3,10 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import random from 'random';
 import { Api, TelegramClient } from 'telegram';
-import { NewMessageEvent } from 'telegram/events';
 import { v4 as uuidv4 } from 'uuid';
 
-// const prisma = new PrismaClient();
 export async function sendMessageCustom(client, peer: string, message: string) {
 	await client.connect(); // This assumes you have already authenticated with .start()
 
@@ -24,7 +22,11 @@ export async function sendMessageCustom(client, peer: string, message: string) {
 	console.log(result); // prints the result
 }
 
-export async function downloadPhoto(event, client: TelegramClient) {
+export async function downloadPhoto(
+	event,
+	client: TelegramClient,
+	fileName: string
+) {
 	const photo = event.message.photo;
 	const buffer = await client.downloadFile(
 		new Api.InputPhotoFileLocation({
@@ -39,19 +41,18 @@ export async function downloadPhoto(event, client: TelegramClient) {
 		}
 	);
 
-	fs.writeFileSync(uuidv4() + '.jpg', buffer);
+	fs.writeFileSync(`./media/${fileName}.jpg`, buffer);
+	console.log('Done downloading!');
 }
 
-export async function saveTextMessage(
-	event: NewMessageEvent,
-	prisma: PrismaClient
-) {
+export async function saveTextMessage(event, prisma: PrismaClient) {
 	await prisma.message
 		.create({
 			data: {
 				messageType: messageTypes.messageText,
 				messageText: event.message.message,
 				messageMedia: false,
+				mediaPath: 'null',
 				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 			},
 		})
@@ -64,22 +65,29 @@ export async function saveTextMessage(
 }
 
 export async function savePhotoMessage(
-	event: NewMessageEvent,
-	prisma: PrismaClient
+	event,
+	prisma: PrismaClient,
+	client: TelegramClient
 ) {
-	await prisma.message
-		.create({
-			data: {
-				messageType: messageTypes.messagePhoto,
-				messageText: event.message.message || 'noText',
-				messageMedia: true,
-				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
-			},
-		})
-		.catch(e => {
-			throw e;
-		})
-		.finally(async () => {
-			await prisma.$disconnect();
-		});
+	const fileName = uuidv4();
+
+	await downloadPhoto(event, client, fileName).then(() => {
+		prisma.message
+			.create({
+				data: {
+					messageType: messageTypes.messagePhoto,
+					messageText: event.message.message || 'noText',
+					messageMedia: true,
+					mediaPath: `./media/${fileName}.jpg`,
+					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+				},
+			})
+			.catch(e => {
+				throw e;
+			})
+			.finally(async () => {
+				console.log('Done saving to DB!');
+				await prisma.$disconnect();
+			});
+	});
 }

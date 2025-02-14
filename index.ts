@@ -40,8 +40,7 @@ const stringSession = new StringSession(process.env.SESSION_ID); // fill this la
 
 			switch (messageType) {
 				case 'MessageMediaPhoto':
-					savePhotoMessage(event, prisma);
-					downloadPhoto(event, client);
+					savePhotoMessage(event, prisma, client);
 					break;
 				case 'MessageMediaDocument':
 					console.log('MessageMediaDocument');

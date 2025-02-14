@@ -13,6 +13,7 @@ model Message {
   messageType String
   messageText String
   messageMedia Boolean 
+  mediaPath String
   fwdFrom Json 
   createdAt DateTime @default(now())
 }
