@@ -1,16 +1,15 @@
 import {
-	downloadPhoto,
+	saveDocumentMessage,
 	savePhotoMessage,
 	saveTextMessage,
-	sendMessageCustom,
-} from './handlers';
+	saveWebPageMessage,
+} from './handlers.js';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import input from 'input';
 import { TelegramClient } from 'telegram';
 import { NewMessage, NewMessageEvent } from 'telegram/events/index.js';
 import { StringSession } from 'telegram/sessions/index.js';
-import { getInnerText } from 'telegram/Utils';
 
 const prisma = new PrismaClient();
 const apiId = +process.env.API_ID;
@@ -32,21 +31,24 @@ const stringSession = new StringSession(process.env.SESSION_ID); // fill this la
 
 	async function handler(event: NewMessageEvent) {
 		if (event.message.media === null || event.message.media === undefined) {
-			//MessageMediaEmpty
 			saveTextMessage(event, prisma);
-			// sendMessageCustom(client, process.env.CHANNEL_FOR_SENDING_ID, event.message.message);
+			console.log('TextMessage');
 		} else {
 			let messageType = event.message.media.className;
 
 			switch (messageType) {
 				case 'MessageMediaPhoto':
-					savePhotoMessage(event, prisma, client);
+					await savePhotoMessage(event, prisma, client);
+					console.log('PhotoMessage');
 					break;
 				case 'MessageMediaDocument':
+					await saveDocumentMessage(event, prisma, client);
 					console.log('MessageMediaDocument');
 					break;
 				case 'MessageMediaWebPage':
-					console.log('MessageMediaWebPage');
+					console.log('MessageWebPage');
+					await saveWebPageMessage(event, prisma);
+
 					break;
 				case 'MessageMediaContact':
 					console.log('MessageMediaContact');

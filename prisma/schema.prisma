@@ -13,6 +13,11 @@ model Message {
   messageType String
   messageText String
   messageMedia Boolean 
+  spoiler Boolean @default(false)
+  video Boolean @default(false)
+  round Boolean @default(false)
+  voice Boolean @default(false)
+  webPage Json 
   mediaPath String
   fwdFrom Json 
   createdAt DateTime @default(now())

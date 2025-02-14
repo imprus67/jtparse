@@ -1,49 +1,8 @@
-import { messageTypes } from './types/messagetypes';
+import { messageTypes } from './types/messagetypes.js';
+import { downloadDocument, downloadPhoto } from './utils.js';
 import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import random from 'random';
-import { Api, TelegramClient } from 'telegram';
+import { Api, client, TelegramClient } from 'telegram';
 import { v4 as uuidv4 } from 'uuid';
-
-export async function sendMessageCustom(client, peer: string, message: string) {
-	await client.connect(); // This assumes you have already authenticated with .start()
-
-	const result: Api.Updates = await client.invoke(
-		new Api.messages.SendMessage({
-			peer,
-			message,
-			randomId: random.int(1, 9999999999999),
-			noWebpage: true,
-			noforwards: true,
-			scheduleDate: 43,
-			sendAs: peer,
-		})
-	);
-	console.log(result); // prints the result
-}
-
-export async function downloadPhoto(
-	event,
-	client: TelegramClient,
-	fileName: string
-) {
-	const photo = event.message.photo;
-	const buffer = await client.downloadFile(
-		new Api.InputPhotoFileLocation({
-			id: photo.id,
-			accessHash: photo.accessHash,
-			fileReference: photo.fileReference,
-			thumbSize: 'y',
-		}),
-		{
-			dcId: photo.dcId,
-			//fileSize: "y",
-		}
-	);
-
-	fs.writeFileSync(`./media/${fileName}.jpg`, buffer);
-	console.log('Done downloading!');
-}
 
 export async function saveTextMessage(event, prisma: PrismaClient) {
 	await prisma.message
@@ -52,7 +11,8 @@ export async function saveTextMessage(event, prisma: PrismaClient) {
 				messageType: messageTypes.messageText,
 				messageText: event.message.message,
 				messageMedia: false,
-				mediaPath: 'null',
+				webPage: null,
+				mediaPath: 'noPath',
 				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 			},
 		})
@@ -78,6 +38,8 @@ export async function savePhotoMessage(
 					messageType: messageTypes.messagePhoto,
 					messageText: event.message.message || 'noText',
 					messageMedia: true,
+					spoiler: event.message.media.spoiler,
+					webPage: null,
 					mediaPath: `./media/${fileName}.jpg`,
 					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 				},
@@ -90,4 +52,93 @@ export async function savePhotoMessage(
 				await prisma.$disconnect();
 			});
 	});
+}
+
+export async function saveDocumentMessage(event, prisma: PrismaClient, client) {
+	const fileName = uuidv4();
+	const fileExtension = await downloadDocument(event, client, fileName);
+
+	if (event.message.media?.video == true) {
+		prisma.message
+			.create({
+				data: {
+					messageType: messageTypes.messageDocument,
+					messageText: event.message.message || 'noText',
+					messageMedia: true,
+					spoiler: event.message.media.spoiler,
+					video: true,
+					round: event.message.media.round,
+					webPage: null,
+					mediaPath: `./media/${fileName}.${fileExtension}`,
+					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+				},
+			})
+			.catch(e => {
+				throw e;
+			})
+			.finally(async () => {
+				console.log('Done saving to DB!');
+				await prisma.$disconnect();
+			});
+	} else if (event.message.media?.voice == true) {
+		prisma.message
+			.create({
+				data: {
+					messageType: messageTypes.messageDocument,
+					messageText: event.message.message || 'noText',
+					messageMedia: true,
+					voice: true,
+					webPage: null,
+					mediaPath: `./media/${fileName}.${fileExtension}`,
+					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+				},
+			})
+			.catch(e => {
+				throw e;
+			})
+			.finally(async () => {
+				console.log('Done saving to DB!');
+				await prisma.$disconnect();
+			});
+	} else {
+		prisma.message
+			.create({
+				data: {
+					messageType: messageTypes.messageDocument,
+					messageText: event.message.message || 'noText',
+					messageMedia: true,
+					webPage: null,
+					mediaPath: `./media/${fileName}.${fileExtension}`,
+					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+				},
+			})
+			.catch(e => {
+				throw e;
+			})
+			.finally(async () => {
+				console.log('Done saving to DB!');
+				await prisma.$disconnect();
+			});
+	}
+}
+
+export async function saveWebPageMessage(event, prisma: PrismaClient) {
+	await prisma.message
+		.create({
+			data: {
+				messageType: messageTypes.messageWebPage,
+				messageText: event.message.message || 'noText',
+				messageMedia: true,
+				webPage: event.message.media.webpage,
+				mediaPath: 'noPath',
+				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+			},
+		})
+		.catch(e => {
+			throw e;
+		})
+		.finally(async () => {
+			console.log('Done saving to DB!');
+			await prisma.$disconnect();
+		});
 }
