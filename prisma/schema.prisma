@@ -7,11 +7,13 @@ datasource db {
   url      = "file:../telegram.sqlite"
 }
 
-model TextMessage {
+model Message {
 
   id Int @id @default(autoincrement())
-
+  messageType String
   messageText String
-
+  messageMedia Boolean 
+  fwdFrom Json 
   createdAt DateTime @default(now())
 }
+
