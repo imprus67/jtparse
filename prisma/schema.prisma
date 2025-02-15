@@ -18,8 +18,11 @@ model Message {
   round Boolean @default(false)
   voice Boolean @default(false)
   webPage Json 
-  mediaPath String
+  mediaPath Json
+  contact Json
   fwdFrom Json 
+  isGrouped Boolean @default(false)
+  // groupedId String @default('null')
   createdAt DateTime @default(now())
 }
 

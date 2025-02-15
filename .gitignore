@@ -3,7 +3,6 @@ node_modules
 telegram.sqlite
 telegram.sqlite-shm
 telegram.sqlite-wal
-types/*
 dist/*
 commands.txt
 prisma/migrations/*

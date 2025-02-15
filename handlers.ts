@@ -1,5 +1,9 @@
 import { messageTypes } from './types/messagetypes.js';
-import { downloadDocument, downloadPhoto } from './utils.js';
+import {
+	downloadDocument,
+	downloadPhoto,
+	savePhotoOrVideoFromAlbum,
+} from './utils.js';
 import { PrismaClient } from '@prisma/client';
 import { Api, client, TelegramClient } from 'telegram';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,7 +16,8 @@ export async function saveTextMessage(event, prisma: PrismaClient) {
 				messageText: event.message.message,
 				messageMedia: false,
 				webPage: null,
-				mediaPath: 'noPath',
+				mediaPath: { path: 'noPath' },
+				contact: null,
 				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 			},
 		})
@@ -40,7 +45,8 @@ export async function savePhotoMessage(
 					messageMedia: true,
 					spoiler: event.message.media.spoiler,
 					webPage: null,
-					mediaPath: `./media/${fileName}.jpg`,
+					mediaPath: { path: `./media/${fileName}.jpg` },
+					contact: null,
 					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 				},
 			})
@@ -69,7 +75,8 @@ export async function saveDocumentMessage(event, prisma: PrismaClient, client) {
 					video: true,
 					round: event.message.media.round,
 					webPage: null,
-					mediaPath: `./media/${fileName}.${fileExtension}`,
+					mediaPath: { path: `./media/${fileName}.${fileExtension}` },
+					contact: null,
 					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 				},
 			})
@@ -81,7 +88,7 @@ export async function saveDocumentMessage(event, prisma: PrismaClient, client) {
 				await prisma.$disconnect();
 			});
 	} else if (event.message.media?.voice == true) {
-		prisma.message
+		await prisma.message
 			.create({
 				data: {
 					messageType: messageTypes.messageDocument,
@@ -89,7 +96,8 @@ export async function saveDocumentMessage(event, prisma: PrismaClient, client) {
 					messageMedia: true,
 					voice: true,
 					webPage: null,
-					mediaPath: `./media/${fileName}.${fileExtension}`,
+					mediaPath: { path: `./media/${fileName}.${fileExtension}` },
+					contact: null,
 					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 				},
 			})
@@ -108,7 +116,8 @@ export async function saveDocumentMessage(event, prisma: PrismaClient, client) {
 					messageText: event.message.message || 'noText',
 					messageMedia: true,
 					webPage: null,
-					mediaPath: `./media/${fileName}.${fileExtension}`,
+					mediaPath: { path: `./media/${fileName}.${fileExtension}` },
+					contact: null,
 					fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 				},
 			})
@@ -130,7 +139,8 @@ export async function saveWebPageMessage(event, prisma: PrismaClient) {
 				messageText: event.message.message || 'noText',
 				messageMedia: true,
 				webPage: event.message.media.webpage,
-				mediaPath: 'noPath',
+				mediaPath: { path: 'noPath' },
+				contact: null,
 				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
 			},
 		})
@@ -141,4 +151,59 @@ export async function saveWebPageMessage(event, prisma: PrismaClient) {
 			console.log('Done saving to DB!');
 			await prisma.$disconnect();
 		});
+}
+
+export async function saveContact(event, prisma: PrismaClient) {
+	await prisma.message
+		.create({
+			data: {
+				messageType: messageTypes.messageContact,
+				messageText: event.message.message || 'noText',
+				messageMedia: true,
+				webPage: null,
+				mediaPath: { path: 'noPath' },
+				contact: event.message.media,
+				fwdFrom: JSON.stringify(event.message.fwdFrom) || null,
+			},
+		})
+		.catch(e => {
+			throw e;
+		})
+		.finally(async () => {
+			console.log('Done saving to DB!');
+			await prisma.$disconnect();
+		});
+}
+
+export async function saveAlbum(
+	message,
+	prisma: PrismaClient,
+	client: TelegramClient
+) {
+	const fileName = uuidv4();
+	await savePhotoOrVideoFromAlbum(message, client);
+	/* then(res => {
+		let video = true;
+		res == 'mp4' ? (video = true) : (video = false);
+		prisma.message
+			.create({
+				data: {
+					messageType: messageTypes.messageDocument,
+					messageText: message.message || 'noText',
+					messageMedia: true,
+					webPage: null,
+					video,
+					mediaPath: `./media/${fileName}.${res}`,
+					contact: null,
+					fwdFrom: JSON.stringify(message.fwdFrom) || null,
+				},
+			})
+			.catch(e => {
+				throw e;
+			})
+			.finally(async () => {
+				console.log('Done saving to DB!');
+				await prisma.$disconnect();
+			});
+	}); */
 }

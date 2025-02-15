@@ -1,7 +1,8 @@
 import { fileTypeFromBuffer } from 'file-type';
 import fs from 'fs';
 import random from 'random';
-import { Api, TelegramClient } from 'telegram';
+import { Api, client, TelegramClient } from 'telegram';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function sendMessageCustom(client, peer: string, message: string) {
 	await client.connect(); // This assumes you have already authenticated with .start()
@@ -56,4 +57,38 @@ export async function downloadDocument(
 	const fileExtension = await fileTypeFromBuffer(buffer);
 	fs.writeFileSync(`./media/${fileName}.${fileExtension.ext}`, buffer);
 	return fileExtension.ext;
+}
+
+export async function savePhotoOrVideoFromAlbum(message, client) {
+	let fileName = uuidv4();
+	if (message.media.className == 'MessageMediaPhoto') {
+		const photo = message.photo;
+		const buffer = await client.downloadFile(
+			new Api.InputPhotoFileLocation({
+				id: photo.id,
+				accessHash: photo.accessHash,
+				fileReference: photo.fileReference,
+				thumbSize: 'y',
+			}),
+			{
+				dcId: photo.dcId,
+				//fileSize: "y",
+			}
+		);
+
+		fs.writeFileSync(`./media/${fileName}.jpg`, buffer);
+		console.log('Done downloading!');
+		fileName = `${fileName}.jpg`;
+	} else if (message.media.className == 'MessageMediaDocument') {
+		const media = message.media;
+
+		const buffer = await client.downloadMedia(media, {
+			workers: 1,
+		});
+		// const fileExtension = await fileTypeFromBuffer(buffer);
+		fs.writeFileSync(`./media/${fileName}.mp4}`, buffer);
+		fileName = `${fileName}.mp4`;
+	}
+	console.log(fileName);
+	return fileName;
 }
