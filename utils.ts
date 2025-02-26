@@ -40,7 +40,7 @@ export async function downloadPhoto(
 		}
 	);
 
-	fs.writeFileSync(`./media/${fileName}.jpg`, buffer);
+	fs.writeFileSync(`${process.env.MEDIA_PATH}/${fileName}.jpg`, buffer);
 	console.log('Done downloading!');
 }
 
@@ -55,7 +55,10 @@ export async function downloadDocument(
 		workers: 1,
 	});
 	const fileExtension = await fileTypeFromBuffer(buffer);
-	fs.writeFileSync(`./media/${fileName}.${fileExtension.ext}`, buffer);
+	fs.writeFileSync(
+		`${process.env.MEDIA_PATH}/${fileName}.${fileExtension.ext}`,
+		buffer
+	);
 	return fileExtension.ext;
 }
 
@@ -76,7 +79,7 @@ export async function savePhotoOrVideoFromAlbum(message, client) {
 			}
 		);
 
-		fs.writeFileSync(`./media/${fileName}.jpg`, buffer);
+		fs.writeFileSync(`${process.env.MEDIA_PATH}/${fileName}.jpg`, buffer);
 		console.log('Done downloading!');
 		fileName = `${fileName}.jpg`;
 	} else if (message.media.className == 'MessageMediaDocument') {
@@ -86,7 +89,7 @@ export async function savePhotoOrVideoFromAlbum(message, client) {
 			workers: 1,
 		});
 		// const fileExtension = await fileTypeFromBuffer(buffer);
-		fs.writeFileSync(`./media/${fileName}.mp4}`, buffer);
+		fs.writeFileSync(`${process.env.MEDIA_PATH}/${fileName}.mp4}`, buffer);
 		fileName = `${fileName}.mp4`;
 	}
 	console.log(fileName);

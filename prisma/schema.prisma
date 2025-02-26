@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../telegram.sqlite"
+  url      = "file:../../telegram.sqlite"
 }
 
 model Message {
@@ -12,17 +12,21 @@ model Message {
   id Int @id @default(autoincrement())
   messageType String
   messageText String
+  entities Json
   messageMedia Boolean 
   spoiler Boolean @default(false)
   video Boolean @default(false)
   round Boolean @default(false)
   voice Boolean @default(false)
+  attributesOfDocument Json
   webPage Json 
-  mediaPath Json
+  mediaPath String
   contact Json
   fwdFrom Json 
   isGrouped Boolean @default(false)
-  // groupedId String @default('null')
+  groupId String @default("null")
+  fromChannel String
+  isSend Boolean @default(false)
   createdAt DateTime @default(now())
 }
 
